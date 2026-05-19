@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的日记</title>
+    <meta name="theme-color" content="#6BA3E0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="我的日记">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部栏 -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">📔</span>
+                <span>我的日记</span>
+            </div>
+            <div class="header-actions">
+                <button id="exportBtn" class="btn-header">📤 导出</button>
+                <button id="importBtn" class="btn-header">📥 导入</button>
+                <button id="settingsBtn" class="btn-header">⚙️ 设置</button>
+            </div>
+        </header>
+
+        <!-- 搜索栏 -->
+        <div class="search-bar">
+            <div class="search-input-wrapper">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" class="search-input" placeholder="搜索日记内容...">
+            </div>
+        </div>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 左侧：日历 -->
+            <aside class="sidebar">
+                <div class="calendar-card">
+                    <div class="calendar-header">
+                        <div class="calendar-title-wrapper">
+                            <select class="year-select" id="yearSelect"></select>
+                            <span class="calendar-separator">年</span>
+                            <select class="month-select" id="monthSelect">
+                                <option value="0">1月</option>
+                                <option value="1">2月</option>
+                                <option value="2">3月</option>
+                                <option value="3">4月</option>
+                                <option value="4">5月</option>
+                                <option value="5">6月</option>
+                                <option value="6">7月</option>
+                                <option value="7">8月</option>
+                                <option value="8">9月</option>
+                                <option value="9">10月</option>
+                                <option value="10">11月</option>
+                                <option value="11">12月</option>
+                            </select>
+                        </div>
+                        <div class="calendar-nav">
+                            <button class="nav-btn" id="prevMonth">‹</button>
+                            <button class="nav-btn" id="todayBtn">今天</button>
+                            <button class="nav-btn" id="nextMonth">›</button>
+                        </div>
+                    </div>
+                    <div class="calendar-weekdays">
+                        <div class="weekday">日</div>
+                        <div class="weekday">一</div>
+                        <div class="weekday">二</div>
+                        <div class="weekday">三</div>
+                        <div class="weekday">四</div>
+                        <div class="weekday">五</div>
+                        <div class="weekday">六</div>
+                    </div>
+                    <div class="calendar-grid" id="calendarGrid">
+                        <!-- 日历格子由 JS 生成 -->
+                    </div>
+                    <div class="calendar-legend">
+                        <div class="legend-item">
+                            <span class="legend-dot has-entry"></span>
+                            <span>有日记</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot today"></span>
+                            <span>今天</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot selected"></span>
+                            <span>选中</span>
+                        </div>
+                    </div>
+                    <button id="clearFilterBtn" class="btn-secondary btn-small" style="display: none;">
+                        显示全部日记
+                    </button>
+                </div>
+            </aside>
+
+            <!-- 右侧：日记列表 -->
+            <section class="content">
+                <div class="content-header">
+                    <h2 class="content-title">📖 我的日记</h2>
+                    <span id="entryCount" class="entry-count"></span>
+                    <button id="writeBtn" class="btn-primary">✏️ 写日记</button>
+                </div>
+
+                <div id="entryList" class="entry-list">
+                    <!-- 日记列表将在这里动态生成 -->
+                </div>
+
+                <!-- 空状态 -->
+                <div id="emptyState" class="empty-state">
+                    <div class="empty-icon">📝</div>
+                    <p class="empty-text">还没有日记，写下你的第一篇吧！</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 写日记弹窗 -->
+    <div id="writeModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">✏️ 写日记</h3>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <form id="diaryForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">日期</label>
+                        <input type="date" id="diaryDate" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">标题</label>
+                        <input type="text" id="diaryTitle" class="form-input" placeholder="给今天取个标题..." required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">内容</label>
+                        <textarea id="diaryContent" class="form-textarea" placeholder="记录下今天发生的事情..." rows="5" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">图片（最多5张）</label>
+                        <div class="image-upload-area" id="imageUploadArea">
+                            <div class="upload-placeholder">
+                                <div class="upload-icon">📷</div>
+                                <div class="upload-text">点击或拖拽上传图片</div>
+                                <div class="upload-hint">支持 JPG、PNG 格式</div>
+                            </div>
+                            <input type="file" id="imageInput" class="image-input" accept="image/*" multiple>
+                        </div>
+                        <div class="image-preview-list" id="imagePreviewList"></div>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="isPinned">
+                            <span>置顶这篇日记</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" id="cancelBtn">取消</button>
+                    <button type="submit" class="btn-primary">保存日记</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 导入弹窗 -->
+    <div id="importModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">📥 导入日记</h3>
+                <button class="modal-close" id="closeImportModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">选择备份文件</label>
+                    <input type="file" id="importFile" class="form-input" accept=".json">
+                </div>
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="mergeImport" checked>
+                        <span>合并到现有日记（不勾选则覆盖）</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="cancelImportBtn">取消</button>
+                <button type="button" class="btn-primary" id="confirmImportBtn">导入</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 设置弹窗 -->
+    <div id="settingsModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">⚙️ 设置</h3>
+                <button class="modal-close" id="closeSettingsModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h4 class="settings-title">📅 备份提醒</h4>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="enableReminder" checked>
+                            <span>开启定期备份提醒</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">提醒间隔（天）</label>
+                        <select id="reminderInterval" class="form-input">
+                            <option value="3">3天</option>
+                            <option value="7" selected>7天</option>
+                            <option value="14">14天</option>
+                            <option value="30">30天</option>
+                        </select>
+                    </div>
+                    <div class="settings-info" id="lastBackupInfo">
+                        上次备份：从未备份
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h4 class="settings-title">💾 数据管理</h4>
+                    <div class="settings-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">日记数量：</span>
+                            <span class="stat-value" id="statsEntryCount">0 篇</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">存储使用：</span>
+                            <span class="stat-value" id="statsStorageSize">计算中...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h4 class="settings-title">⚠️ 危险操作</h4>
+                    <button id="clearAllBtn" class="btn-danger">🗑️ 清空所有数据</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="cancelSettingsBtn">取消</button>
+                <button type="button" class="btn-primary" id="saveSettingsBtn">保存设置</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 提示 -->
+    <div id="toast" class="toast"></div>
+
+    <!-- PWA Service Worker 注册 -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(function(registration) {
+                        console.log('SW registered:', registration.scope);
+                    })
+                    .catch(function(error) {
+                        console.log('SW registration failed:', error);
+                    });
+            });
+        }
+    </script>
+
+    <script src="js/db.js"></script>
+    <script src="js/image-utils.js"></script>
+    <script src="js/calendar.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

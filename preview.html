@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日记应用 - 效果预览</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #f0f7fc 0%, #e8f4fd 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(107, 163, 224, 0.15);
+            overflow: hidden;
+        }
+
+        /* 顶部栏 */
+        .header {
+            background: linear-gradient(135deg, #6BA3E0 0%, #4A90D9 100%);
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-header {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-header:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* 搜索栏 */
+        .search-bar {
+            padding: 20px 30px;
+            background: #fafafa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+            max-width: 500px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px 12px 44px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #6BA3E0;
+            box-shadow: 0 0 0 3px rgba(107, 163, 224, 0.15);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            font-size: 16px;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            display: flex;
+            min-height: 600px;
+        }
+
+        /* 左侧日历 */
+        .sidebar {
+            width: 320px;
+            background: #fafafa;
+            border-right: 1px solid #e0e0e0;
+            padding: 24px;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .calendar-nav {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid #e0e0e0;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover {
+            border-color: #6BA3E0;
+            color: #6BA3E0;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+
+        .weekday {
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+            padding: 8px 0;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .calendar-day:hover {
+            background: #e8f4fd;
+        }
+
+        .calendar-day.today {
+            border: 2px solid #6BA3E0;
+        }
+
+        .calendar-day.selected {
+            background: #6BA3E0;
+            color: white;
+        }
+
+        .calendar-day.has-entry::after {
+            content: '';
+            width: 4px;
+            height: 4px;
+            background: #FFB366;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 4px;
+        }
+
+        .calendar-day.other-month {
+            color: #ccc;
+        }
+
+        /* 右侧内容区 */
+        .content {
+            flex: 1;
+            padding: 24px;
+            background: white;
+        }
+
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .content-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .btn-primary {
+            padding: 10px 20px;
+            background: #6BA3E0;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(107, 163, 224, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: #4A90D9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(107, 163, 224, 0.4);
+        }
+
+        /* 日记列表 */
+        .entry-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .entry-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 1px solid #f0f0f0;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .entry-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .entry-card.pinned {
+            border-left: 4px solid #FFD93D;
+            background: linear-gradient(90deg, rgba(255,217,61,0.05) 0%, white 100%);
+        }
+
+        .entry-card.pinned::before {
+            content: '📌';
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            font-size: 14px;
+        }
+
+        .entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+
+        .entry-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .entry-date {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .entry-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #999;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        .action-btn.edit:hover {
+            color: #6BA3E0;
+        }
+
+        .action-btn.delete:hover {
+            color: #FF6B6B;
+        }
+
+        .action-btn.pin:hover {
+            color: #FFB366;
+        }
+
+        .entry-content {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .entry-images {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .entry-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: #f0f0f0;
+        }
+
+        /* 写日记弹窗 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 20px;
+            color: #999;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #6BA3E0;
+            box-shadow: 0 0 0 3px rgba(107, 163, 224, 0.15);
+        }
+
+        textarea.form-input {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .image-upload {
+            border: 2px dashed #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .image-upload:hover {
+            border-color: #6BA3E0;
+            background: #f8fbff;
+        }
+
+        .upload-icon {
+            font-size: 32px;
+            color: #6BA3E0;
+            margin-bottom: 8px;
+        }
+
+        .upload-text {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .upload-hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .btn-secondary {
+            padding: 10px 20px;
+            background: white;
+            color: #666;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: #f5f5f5;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #6BA3E0;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            color: #e0e0e0;
+            margin-bottom: 16px;
+        }
+
+        .empty-text {
+            font-size: 16px;
+            color: #999;
+            margin-bottom: 20px;
+        }
+
+        /* 提示 */
+        .preview-notice {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #4A90D9;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 2000;
+        }
+
+        /* 设置按钮 */
+        .settings-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 48px;
+            height: 48px;
+            background: #6BA3E0;
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(107, 163, 224, 0.4);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .settings-btn:hover {
+            background: #4A90D9;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-notice">
+        📱 这是效果预览页面 - 仅展示 UI 设计效果
+    </div>
+
+    <div class="container">
+        <!-- 顶部栏 -->
+        <div class="header">
+            <div class="logo">
+                <div class="logo-icon">📔</div>
+                <span>我的日记</span>
+            </div>
+            <div class="header-actions">
+                <button class="btn-header">📤 导出</button>
+                <button class="btn-header">📥 导入</button>
+            </div>
+        </div>
+
+        <!-- 搜索栏 -->
+        <div class="search-bar">
+            <div class="search-input-wrapper">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" placeholder="搜索日记内容...">
+            </div>
+        </div>
+
+        <!-- 主内容 -->
+        <div class="main-content">
+            <!-- 左侧日历 -->
+            <div class="sidebar">
+                <div class="calendar-header">
+                    <div class="calendar-title">2025年 5月</div>
+                    <div class="calendar-nav">
+                        <button class="nav-btn">‹</button>
+                        <button class="nav-btn">›</button>
+                    </div>
+                </div>
+                <div class="calendar-grid">
+                    <div class="weekday">日</div>
+                    <div class="weekday">一</div>
+                    <div class="weekday">二</div>
+                    <div class="weekday">三</div>
+                    <div class="weekday">四</div>
+                    <div class="weekday">五</div>
+                    <div class="weekday">六</div>
+
+                    <div class="calendar-day other-month">28</div>
+                    <div class="calendar-day other-month">29</div>
+                    <div class="calendar-day other-month">30</div>
+                    <div class="calendar-day">1</div>
+                    <div class="calendar-day">2</div>
+                    <div class="calendar-day">3</div>
+                    <div class="calendar-day">4</div>
+
+                    <div class="calendar-day">5</div>
+                    <div class="calendar-day">6</div>
+                    <div class="calendar-day">7</div>
+                    <div class="calendar-day">8</div>
+                    <div class="calendar-day">9</div>
+                    <div class="calendar-day">10</div>
+                    <div class="calendar-day">11</div>
+
+                    <div class="calendar-day">12</div>
+                    <div class="calendar-day has-entry">13</div>
+                    <div class="calendar-day has-entry">14</div>
+                    <div class="calendar-day">15</div>
+                    <div class="calendar-day">16</div>
+                    <div class="calendar-day has-entry">17</div>
+                    <div class="calendar-day selected today">18</div>
+
+                    <div class="calendar-day">19</div>
+                    <div class="calendar-day">20</div>
+                    <div class="calendar-day">21</div>
+                    <div class="calendar-day">22</div>
+                    <div class="calendar-day">23</div>
+                    <div class="calendar-day">24</div>
+                    <div class="calendar-day">25</div>
+
+                    <div class="calendar-day">26</div>
+                    <div class="calendar-day">27</div>
+                    <div class="calendar-day">28</div>
+                    <div class="calendar-day">29</div>
+                    <div class="calendar-day">30</div>
+                    <div class="calendar-day">31</div>
+                    <div class="calendar-day other-month">1</div>
+                </div>
+            </div>
+
+            <!-- 右侧日记列表 -->
+            <div class="content">
+                <div class="content-header">
+                    <div class="content-title">📅 5月18日 的日记</div>
+                    <button class="btn-primary">
+                        <span>+</span>
+                        <span>写日记</span>
+                    </button>
+                </div>
+
+                <div class="entry-list">
+                    <!-- 置顶日记 -->
+                    <div class="entry-card pinned">
+                        <div class="entry-header">
+                            <div>
+                                <div class="entry-title">今天开始用新的日记应用啦！</div>
+                                <div class="entry-date">2025-05-18 14:30</div>
+                            </div>
+                            <div class="entry-actions">
+                                <button class="action-btn pin" title="取消置顶">📌</button>
+                                <button class="action-btn edit" title="编辑">✏️</button>
+                                <button class="action-btn delete" title="删除">🗑️</button>
+                            </div>
+                        </div>
+                        <div class="entry-content">
+                            终于有了一个简洁好用的日记应用，淡蓝色的界面看起来很清爽。以后每天都要记录生活中的美好瞬间～
+                        </div>
+                    </div>
+
+                    <!-- 普通日记 -->
+                    <div class="entry-card">
+                        <div class="entry-header">
+                            <div>
+                                <div class="entry-title">周末去公园散步</div>
+                                <div class="entry-date">2025-05-18 10:15</div>
+                            </div>
+                            <div class="entry-actions">
+                                <button class="action-btn pin" title="置顶">📌</button>
+                                <button class="action-btn edit" title="编辑">✏️</button>
+                                <button class="action-btn delete" title="删除">🗑️</button>
+                            </div>
+                        </div>
+                        <div class="entry-content">
+                            今天天气很好，去附近的公园走了走。看到了盛开的樱花，还有很多在晨练的人。心情也跟着变好了。
+                        </div>
+                        <div class="entry-images">
+                            <div class="entry-image" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);"></div>
+                            <div class="entry-image" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);"></div>
+                        </div>
+                    </div>
+
+                    <!-- 另一篇日记 -->
+                    <div class="entry-card">
+                        <div class="entry-header">
+                            <div>
+                                <div class="entry-title">学习新东西</div>
+                                <div class="entry-date">2025-05-18 08:00</div>
+                            </div>
+                            <div class="entry-actions">
+                                <button class="action-btn pin" title="置顶">📌</button>
+                                <button class="action-btn edit" title="编辑">✏️</button>
+                                <button class="action-btn delete" title="删除">🗑️</button>
+                            </div>
+                        </div>
+                        <div class="entry-content">
+                            今天开始学习新的技能，虽然一开始有点困难，但是慢慢就上手了。坚持就是胜利！
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 写日记弹窗（示意） -->
+    <div class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">✏️ 写日记</div>
+                <button class="modal-close">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">标题</label>
+                    <input type="text" class="form-input" placeholder="给今天取个标题...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">内容</label>
+                    <textarea class="form-input" placeholder="记录下今天发生的事情..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">添加图片</label>
+                    <div class="image-upload">
+                        <div class="upload-icon">📷</div>
+                        <div class="upload-text">点击或拖拽上传图片</div>
+                        <div class="upload-hint">支持 JPG、PNG 格式，最多 5 张</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-wrapper">
+                        <input type="checkbox">
+                        <span>置顶这篇日记</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary">取消</button>
+                <button class="btn-primary">保存日记</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 设置按钮 -->
+    <button class="settings-btn" title="设置">⚙️</button>
+</body>
+</html>

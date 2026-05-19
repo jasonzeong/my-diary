@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>生成 PWA 图标</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background: #f0f7fc;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .icon-item {
+            text-align: center;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .icon-item img {
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .icon-item span {
+            display: block;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #666;
+        }
+        button {
+            background: #6BA3E0;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #4A90D9;
+        }
+        .instructions {
+            background: #e8f4fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        .instructions h3 {
+            color: #333;
+            margin-top: 0;
+        }
+        .instructions ol {
+            color: #555;
+            line-height: 1.8;
+        }
+        .instructions code {
+            background: #fff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📔 日记应用 PWA 图标生成器</h1>
+        <p class="subtitle">点击下方按钮生成各种尺寸的图标</p>
+
+        <div style="text-align: center;">
+            <button onclick="generateIcons()">生成所有图标</button>
+            <button onclick="downloadAll()">下载所有图标</button>
+        </div>
+
+        <div class="icon-grid" id="iconGrid"></div>
+
+        <div class="instructions">
+            <h3>使用说明</h3>
+            <ol>
+                <li>点击"生成所有图标"预览图标效果</li>
+                <li>点击"下载所有图标"保存所有 PNG 文件</li>
+                <li>将下载的图标文件放到 <code>diary-app/</code> 目录下</li>
+                <li>打开日记应用，现在可以安装为 PWA 了</li>
+            </ol>
+            <p><strong>提示：</strong>如果浏览器阻止批量下载，请逐个右键保存图标。</p>
+        </div>
+    </div>
+
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        const generatedIcons = [];
+
+        function generateIcons() {
+            const grid = document.getElementById('iconGrid');
+            grid.innerHTML = '';
+            generatedIcons.length = 0;
+
+            sizes.forEach(size => {
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+
+                // 背景渐变
+                const gradient = ctx.createLinearGradient(0, 0, size, size);
+                gradient.addColorStop(0, '#6BA3E0');
+                gradient.addColorStop(1, '#4A90D9');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, size, size);
+
+                // 圆角
+                ctx.globalCompositeOperation = 'destination-in';
+                ctx.beginPath();
+                ctx.roundRect(0, 0, size, size, size * 0.15);
+                ctx.fill();
+                ctx.globalCompositeOperation = 'source-over';
+
+                // 重新绘制背景（因为上面的操作会裁剪）
+                ctx.save();
+                ctx.beginPath();
+                ctx.roundRect(0, 0, size, size, size * 0.15);
+                ctx.clip();
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, size, size);
+
+                // 日记本图标（使用 emoji 或绘制简单图形）
+                ctx.font = `${size * 0.5}px serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = 'white';
+                ctx.fillText('📔', size / 2, size / 2);
+
+                ctx.restore();
+
+                // 保存数据
+                const dataUrl = canvas.toDataURL('image/png');
+                generatedIcons.push({
+                    size: size,
+                    dataUrl: dataUrl
+                });
+
+                // 显示预览
+                const item = document.createElement('div');
+                item.className = 'icon-item';
+                item.innerHTML = `
+                    <img src="${dataUrl}" width="${Math.min(size, 80)}" height="${Math.min(size, 80)}">
+                    <span>${size}x${size}</span>
+                `;
+                grid.appendChild(item);
+            });
+        }
+
+        function downloadAll() {
+            if (generatedIcons.length === 0) {
+                alert('请先生成图标！');
+                return;
+            }
+
+            generatedIcons.forEach(icon => {
+                const link = document.createElement('a');
+                link.download = `icon-${icon.size}x${icon.size}.png`;
+                link.href = icon.dataUrl;
+                link.click();
+            });
+        }
+
+        // 页面加载时自动生成
+        window.addEventListener('load', generateIcons);
+    </script>
+</body>
+</html>
