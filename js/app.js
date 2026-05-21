@@ -409,6 +409,108 @@
     }
 
     /**
+     * Markdown 渲染器（轻量级）
+     * 支持段落、标题、列表、代码块、加粗、行内代码
+     */
+    function renderMarkdown(text) {
+        if (!text) return '';
+
+        // 提取代码块，防止内部内容被转义
+        var codeBlocks = [];
+        text = text.replace(/```([\s\S]*?)```/g, function(match, code) {
+            codeBlocks.push(escapeHtml(code.trim()));
+            return '\n\n===CODEBLOCK_' + (codeBlocks.length - 1) + '===\n\n';
+        });
+
+        var blocks = text.split(/\n\s*\n/);
+        var html = [];
+
+        blocks.forEach(function(rawBlock) {
+            var block = rawBlock.trim();
+            if (!block) return;
+
+            // 恢复代码块
+            if (block.indexOf('===CODEBLOCK_') === 0) {
+                var idx = parseInt(block.match(/\d+/)[0], 10);
+                html.push('<pre class="md-code-block"><code>' + codeBlocks[idx] + '</code></pre>');
+                return;
+            }
+
+            var lines = block.split('\n');
+            var first = lines[0].trim();
+
+            // 标题 # ## ###
+            if (/^#{1,6}\s/.test(first)) {
+                var level = first.match(/^#{1,6}/)[0].length;
+                var title = first.substring(level + 1);
+                html.push('<h' + level + ' class="md-h' + level + '">' + escapeHtml(title) + '</h' + level + '>');
+                return;
+            }
+
+            // 分隔线
+            if (/^---+\s*$/.test(first) && lines.length === 1) {
+                html.push('<hr class="md-hr">');
+                return;
+            }
+
+            // 无序列表
+            if (/^[-*]\s/.test(first)) {
+                var items = lines.filter(function(l) { return l.trim(); }).map(function(l) {
+                    return '<li>' + renderInline(l.trim().substring(2)) + '</li>';
+                });
+                html.push('<ul class="md-ul">' + items.join('') + '</ul>');
+                return;
+            }
+
+            // 有序列表
+            if (/^\d+\.\s/.test(first)) {
+                var items = lines.filter(function(l) { return l.trim(); }).map(function(l) {
+                    return '<li>' + renderInline(l.trim().replace(/^\d+\.\s*/, '')) + '</li>';
+                });
+                html.push('<ol class="md-ol">' + items.join('') + '</ol>');
+                return;
+            }
+
+            // 普通段落（内部换行保留为 <br>）
+            var para = lines.map(function(l) { return renderInline(l); }).join('<br>');
+            html.push('<p class="md-p">' + para + '</p>');
+        });
+
+        return html.join('');
+    }
+
+    /**
+     * 行内 Markdown 渲染（加粗、行内代码）
+     */
+    function renderInline(text) {
+        // 提取行内代码
+        var codes = [];
+        text = text.replace(/`([^`]+)`/g, function(match, code) {
+            codes.push(escapeHtml(code));
+            return ' C' + (codes.length - 1) + ' ';
+        });
+
+        // 分段处理加粗：非加粗部分转义，加粗部分保留标签且内部转义
+        var result = '';
+        var lastIndex = 0;
+        var pattern = /\*\*([^*]+)\*\*/g;
+        var match;
+        while ((match = pattern.exec(text)) !== null) {
+            result += escapeHtml(text.substring(lastIndex, match.index));
+            result += '<strong>' + escapeHtml(match[1]) + '</strong>';
+            lastIndex = pattern.lastIndex;
+        }
+        result += escapeHtml(text.substring(lastIndex));
+
+        // 恢复行内代码
+        result = result.replace(/ C(\d+) /g, function(match, idx) {
+            return '<code class="md-inline-code">' + codes[parseInt(idx, 10)] + '</code>';
+        });
+
+        return result;
+    }
+
+    /**
      * 渲染单篇日记
      */
     function renderEntry(entry) {
@@ -459,7 +561,7 @@
                     '</button>' +
                 '</div>' +
             '</div>' +
-            '<div class="entry-content">' + escapeHtml(entry.content) + '</div>' +
+            '<div class="entry-content">' + renderMarkdown(entry.content) + '</div>' +
             imagesHtml +
         '</div>';
     }
@@ -977,6 +1079,14 @@
     } else {
         initApp();
     }
+
+    // 自动注入今日工作日记（页面加载后自动执行，无需手动打开控制台）
+    setTimeout(async function() {
+        if (typeof window.injectTodayDiary === 'function') {
+            var result = await window.injectTodayDiary();
+            console.log('[AutoInject]', result.success ? '今日日记自动注入成功' : '跳过注入', result);
+        }
+    }, 1000);
 
     // 检查备份提醒（延迟3秒，等待应用初始化完成）
     setTimeout(function() {

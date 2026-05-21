@@ -125,11 +125,11 @@
 <body>
     <div class="container">
         <h1>📝 日记注入工具</h1>
-        <p class="desc">由于浏览器的同源策略限制，本地文件之间无法共享存储数据。请按以下步骤在 diary-app 页面内完成注入。</p>
+        <p class="desc">日记内容已内置在应用中，打开 diary-app 即可自动注入今日日记。</p>
 
-        <div class="warning">
-            <strong>为什么需要这样做？</strong><br>
-            浏览器将每个本地 HTML 文件的存储空间完全隔离。<code>diary-inject.html</code> 写入的数据，<code>index.html</code> 无法读取。因此注入操作必须在 diary-app 自身的页面上下文中执行。
+        <div class="warning" style="background: #e8f5e9; border-left-color: #4caf50; color: #2e7d32;">
+            <strong>自动注入已启用</strong><br>
+            打开 <code>index.html</code> 后，系统会在 1 秒内自动检测并注入今日日记。无需打开开发者工具或手动执行命令。
         </div>
 
         <ol class="steps">
@@ -138,19 +138,21 @@
                 在浏览器中打开 <a href="index.html" class="btn" style="padding: 6px 14px; font-size: 13px;">index.html</a>
             </li>
             <li>
-                <strong>打开开发者控制台</strong><br>
-                按 <kbd>F12</kbd>（或 <kbd>Ctrl+Shift+J</kbd> / <kbd>Cmd+Option+J</kbd>）打开开发者工具，切换到 Console 标签
-            </li>
-            <li>
-                <strong>执行注入命令</strong><br>
-                在控制台粘贴以下命令并按回车：
-                <div class="code-block">injectTodayDiary()</div>
-            </li>
-            <li>
-                <strong>查看结果</strong><br>
-                注入成功后页面会自动刷新日记列表，今天的日记将置顶显示
+                <strong>等待自动注入</strong><br>
+                页面加载完成后， today's 日记会自动写入并刷新列表，你会看到置顶的工作日记
             </li>
         </ol>
+
+        <hr class="divider">
+
+        <div class="alt-way">
+            <h3>手动注入（备用）</h3>
+            <p>如果自动注入因某些原因未触发，可以手动执行：</p>
+            <ol>
+                <li>在 diary-app 页面按 <kbd>F12</kbd> 打开控制台</li>
+                <li>粘贴并执行：<div class="code-block">injectTodayDiary()</div></li>
+            </ol>
+        </div>
 
         <hr class="divider">
 
