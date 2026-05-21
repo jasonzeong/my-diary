@@ -58,13 +58,26 @@
     }
 
     /**
-     * 保存数据到 localStorage
+     * 保存数据到 localStorage（带容量检查和错误处理）
      */
     function setLocalStorageData(entries) {
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+            const data = JSON.stringify(entries);
+            const dataSize = new Blob([data]).size;
+            const MAX_SIZE = 5 * 1024 * 1024; // 5MB 警告阈值
+
+            if (dataSize > MAX_SIZE) {
+                console.warn('数据大小超过 5MB，可能导致存储失败');
+                // 继续尝试保存，让用户知道问题
+            }
+
+            localStorage.setItem(STORAGE_KEY, data);
             return true;
         } catch (e) {
+            if (e.name === 'QuotaExceededError' || e.code === 22) {
+                console.error('localStorage 存储空间不足，请导出备份后清理数据');
+                throw new Error('存储空间不足，请导出备份后清理部分日记');
+            }
             console.error('保存到 localStorage 失败:', e);
             return false;
         }
@@ -233,11 +246,22 @@
         }
 
         // 排序：置顶优先，然后按时间降序
+        // 预解析所有日期为时间戳，避免排序中重复创建 Date 对象
+        var timeCache = new Map();
+        function getTime(entry) {
+            if (timeCache.has(entry)) {
+                return timeCache.get(entry);
+            }
+            var time = new Date(entry.createdAt).getTime();
+            timeCache.set(entry, time);
+            return time;
+        }
+
         return entries.sort(function(a, b) {
             if (a.isPinned !== b.isPinned) {
                 return a.isPinned ? -1 : 1;
             }
-            return new Date(b.createdAt) - new Date(a.createdAt);
+            return getTime(b) - getTime(a);
         });
     }
 
@@ -394,21 +418,48 @@
 
         // 保存
         if (useIndexedDB && db) {
-            const transaction = db.transaction([STORE_NAME], 'readwrite');
-            const store = transaction.objectStore(STORE_NAME);
             await new Promise(function(resolve, reject) {
-                const clearRequest = store.clear();
-                clearRequest.onsuccess = resolve;
-                clearRequest.onerror = reject;
-            });
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                var successCount = 0;
+                var failCount = 0;
 
-            for (let i = 0; i < entries.length; i++) {
-                await new Promise(function(resolve, reject) {
-                    const request = store.put(entries[i]);
-                    request.onsuccess = resolve;
-                    request.onerror = reject;
+                transaction.oncomplete = function() {
+                    if (failCount > 0) {
+                        console.warn('导入完成，' + successCount + ' 条成功，' + failCount + ' 条失败');
+                    }
+                    resolve();
+                };
+                transaction.onerror = function(e) {
+                    console.error('导入事务失败:', e.target.error);
+                    // 事务已失败，不再 reject 让部分数据保留
+                };
+                transaction.onabort = function() {
+                    console.error('导入事务被中止');
+                    reject(new Error('导入被中止'));
+                };
+
+                // 先清空
+                store.clear();
+
+                // 批量添加（带错误隔离）
+                entries.forEach(function(entry) {
+                    try {
+                        const request = store.put(entry);
+                        request.onsuccess = function() {
+                            successCount++;
+                        };
+                        request.onerror = function() {
+                            failCount++;
+                            console.error('单条导入失败:', entry.id, request.error);
+                            // 继续处理下一条
+                        };
+                    } catch (e) {
+                        failCount++;
+                        console.error('单条处理异常:', entry.id, e);
+                    }
                 });
-            }
+            });
         } else {
             if (storageAvailable) {
                 setLocalStorageData(entries);

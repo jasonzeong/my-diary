@@ -16,8 +16,15 @@
     // 有日记的日期集合
     let datesWithEntries = new Set();
 
+    // 缓存日历格子元素，避免重复创建
+    let dayElements = [];
+
     // 年份范围
     const YEAR_RANGE = 20; // 前后各20年
+
+    // 上次渲染的月份，用于判断是否需要重建DOM
+    let lastRenderedYear = null;
+    let lastRenderedMonth = null;
 
     /**
      * 初始化日历
@@ -25,8 +32,35 @@
     function initCalendar() {
         initYearSelect();
         bindCalendarEvents();
+        bindGridEventDelegation(); // 绑定事件委托
         updateSelectors();
         renderCalendar();
+    }
+
+    /**
+     * 绑定日历格子的事件委托
+     */
+    function bindGridEventDelegation() {
+        const grid = document.getElementById('calendarGrid');
+        grid.addEventListener('click', function(e) {
+            const dayEl = e.target.closest('.calendar-day');
+            if (!dayEl) return;
+
+            // 获取日期（存储在 data-date 属性中）
+            const dateStr = dayEl.dataset.date;
+            if (!dateStr) return; // 其他月份的格子没有 date
+
+            selectedDate = dateStr;
+            renderCalendar();
+
+            // 显示清除筛选按钮
+            document.getElementById('clearFilterBtn').style.display = 'block';
+
+            // 触发回调
+            if (window.onDateSelect) {
+                window.onDateSelect(dateStr);
+            }
+        });
     }
 
     /**
@@ -124,40 +158,68 @@
 
     /**
      * 渲染日历
+     * 优化：月份未变化时只更新class，不重建DOM
      */
     function renderCalendar() {
         const grid = document.getElementById('calendarGrid');
-        grid.innerHTML = '';
-
-        const firstDay = new Date(currentYear, currentMonth, 1);
-        const lastDay = new Date(currentYear, currentMonth + 1, 0);
-        const daysInMonth = lastDay.getDate();
-        const startDayOfWeek = firstDay.getDay(); // 0 = Sunday
+        const isMonthChanged = lastRenderedYear !== currentYear || lastRenderedMonth !== currentMonth;
 
         const today = new Date();
         const todayStr = today.toISOString().split('T')[0];
 
-        // 上月剩余天数
-        const prevMonthLastDay = new Date(currentYear, currentMonth, 0).getDate();
-        for (let i = startDayOfWeek - 1; i >= 0; i--) {
-            const day = prevMonthLastDay - i;
-            const dayEl = createDayElement(day, true);
-            grid.appendChild(dayEl);
-        }
+        if (isMonthChanged) {
+            // 月份变化，需要重建DOM
+            grid.innerHTML = '';
+            dayElements = [];
 
-        // 当月天数
-        for (let day = 1; day <= daysInMonth; day++) {
-            const dateStr = formatDate(currentYear, currentMonth, day);
-            const dayEl = createDayElement(day, false, dateStr, todayStr);
-            grid.appendChild(dayEl);
-        }
+            const firstDay = new Date(currentYear, currentMonth, 1);
+            const lastDay = new Date(currentYear, currentMonth + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startDayOfWeek = firstDay.getDay(); // 0 = Sunday
 
-        // 下月开始天数
-        const totalCells = grid.children.length;
-        const remainingCells = 42 - totalCells; // 6 rows * 7 days
-        for (let day = 1; day <= remainingCells; day++) {
-            const dayEl = createDayElement(day, true);
-            grid.appendChild(dayEl);
+            // 上月剩余天数
+            const prevMonthLastDay = new Date(currentYear, currentMonth, 0).getDate();
+            for (let i = startDayOfWeek - 1; i >= 0; i--) {
+                const day = prevMonthLastDay - i;
+                const dayEl = createDayElement(day, true);
+                grid.appendChild(dayEl);
+                dayElements.push({ el: dayEl, dateStr: null });
+            }
+
+            // 当月天数
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = formatDate(currentYear, currentMonth, day);
+                const dayEl = createDayElement(day, false, dateStr, todayStr);
+                grid.appendChild(dayEl);
+                dayElements.push({ el: dayEl, dateStr: dateStr });
+            }
+
+            // 下月开始天数
+            const totalCells = grid.children.length;
+            const remainingCells = 42 - totalCells; // 6 rows * 7 days
+            for (let day = 1; day <= remainingCells; day++) {
+                const dayEl = createDayElement(day, true);
+                grid.appendChild(dayEl);
+                dayElements.push({ el: dayEl, dateStr: null });
+            }
+
+            lastRenderedYear = currentYear;
+            lastRenderedMonth = currentMonth;
+        } else {
+            // 月份未变化，只更新class
+            dayElements.forEach(function(item) {
+                const el = item.el;
+                const dateStr = item.dateStr;
+
+                if (!dateStr) return; // 跳过其他月份的格子
+
+                // 更新今天状态
+                el.classList.toggle('today', dateStr === todayStr);
+                // 更新选中状态
+                el.classList.toggle('selected', dateStr === selectedDate);
+                // 更新有日记状态
+                el.classList.toggle('has-entry', datesWithEntries.has(dateStr));
+            });
         }
     }
 
@@ -174,6 +236,9 @@
         }
 
         if (dateStr) {
+            // 存储日期到 data 属性，用于事件委托
+            el.dataset.date = dateStr;
+
             // 今天
             if (dateStr === todayStr) {
                 el.classList.add('today');
@@ -188,20 +253,6 @@
             if (datesWithEntries.has(dateStr)) {
                 el.classList.add('has-entry');
             }
-
-            // 点击事件
-            el.addEventListener('click', function() {
-                selectedDate = dateStr;
-                renderCalendar();
-
-                // 显示清除筛选按钮
-                document.getElementById('clearFilterBtn').style.display = 'block';
-
-                // 触发回调
-                if (window.onDateSelect) {
-                    window.onDateSelect(dateStr);
-                }
-            });
         }
 
         return el;

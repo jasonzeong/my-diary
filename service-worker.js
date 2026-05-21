@@ -2,7 +2,7 @@
  * Service Worker - PWA 离线缓存
  */
 
-const CACHE_NAME = 'diary-app-v1';
+const CACHE_NAME = 'diary-app-v2';
 const urlsToCache = [
     './',
     './index.html',

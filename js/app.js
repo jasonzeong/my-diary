@@ -18,6 +18,12 @@
     // 当前待上传的图片列表
     var pendingImages = [];
 
+    // DOM 元素缓存
+    var dom = {};
+
+    // 搜索防抖定时器
+    var searchDebounceTimer = null;
+
     /**
      * 初始化应用
      */
@@ -43,6 +49,9 @@
                 filterByDate(date);
             };
 
+            // 缓存常用 DOM 元素（必须在绑定事件前执行）
+            cacheDomElements();
+
             // 加载日记列表
             await loadEntries();
 
@@ -60,6 +69,29 @@
     }
 
     /**
+     * 缓存常用 DOM 元素
+     */
+    function cacheDomElements() {
+        dom.writeModal = document.getElementById('writeModal');
+        dom.importModal = document.getElementById('importModal');
+        dom.settingsModal = document.getElementById('settingsModal');
+        dom.entryList = document.getElementById('entryList');
+        dom.emptyState = document.getElementById('emptyState');
+        dom.toast = document.getElementById('toast');
+        dom.entryCount = document.getElementById('entryCount');
+        dom.diaryForm = document.getElementById('diaryForm');
+        dom.diaryTitle = document.getElementById('diaryTitle');
+        dom.diaryContent = document.getElementById('diaryContent');
+        dom.diaryDate = document.getElementById('diaryDate');
+        dom.isPinned = document.getElementById('isPinned');
+        dom.imagePreviewList = document.getElementById('imagePreviewList');
+        dom.importFile = document.getElementById('importFile');
+        dom.mergeImport = document.getElementById('mergeImport');
+        dom.searchInput = document.getElementById('searchInput');
+        dom.contentTitle = document.querySelector('.content-title');
+    }
+
+    /**
      * 绑定事件处理
      */
     function bindEvents() {
@@ -73,7 +105,7 @@
         document.getElementById('cancelBtn').addEventListener('click', closeWriteModal);
 
         // 表单提交
-        document.getElementById('diaryForm').addEventListener('submit', function(e) {
+        dom.diaryForm.addEventListener('submit', function(e) {
             e.preventDefault();
             handleSubmit();
         });
@@ -81,9 +113,12 @@
         // 图片上传
         bindImageUpload();
 
-        // 搜索
+        // 搜索（带防抖）
         document.getElementById('searchInput').addEventListener('input', function(e) {
-            handleSearch(e.target.value);
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(function() {
+                handleSearch(e.target.value);
+            }, 300); // 300ms 防抖延迟
         });
 
         // 导出
@@ -91,7 +126,7 @@
 
         // 导入
         document.getElementById('importBtn').addEventListener('click', function() {
-            document.getElementById('importModal').classList.add('active');
+            dom.importModal.classList.add('active');
         });
 
         // 关闭导入弹窗
@@ -225,22 +260,23 @@
      */
     function openWriteModal() {
         editingId = null;
-        document.getElementById('diaryForm').reset();
+        dom.diaryForm.reset();
         clearImagePreviews();
 
         // 默认日期为今天
         var today = new Date().toISOString().split('T')[0];
-        document.getElementById('diaryDate').value = today;
+        dom.diaryDate.value = today;
 
-        document.querySelector('.modal-title').textContent = '✏️ 写日记';
-        document.getElementById('writeModal').classList.add('active');
+        var titleEl = document.querySelector('.modal-title');
+        titleEl.innerHTML = '<svg class="title-icon"><use href="#icon-edit"></use></svg><span>写日记</span>';
+        dom.writeModal.classList.add('active');
     }
 
     /**
      * 关闭写日记弹窗
      */
     function closeWriteModal() {
-        document.getElementById('writeModal').classList.remove('active');
+        dom.writeModal.classList.remove('active');
         editingId = null;
         clearImagePreviews();
     }
@@ -249,7 +285,7 @@
      * 关闭导入弹窗
      */
     function closeImportModal() {
-        document.getElementById('importModal').classList.remove('active');
+        dom.importModal.classList.remove('active');
         document.getElementById('importFile').value = '';
     }
 
@@ -257,10 +293,10 @@
      * 处理表单提交
      */
     async function handleSubmit() {
-        var title = document.getElementById('diaryTitle').value.trim();
-        var content = document.getElementById('diaryContent').value.trim();
-        var isPinned = document.getElementById('isPinned').checked;
-        var dateStr = document.getElementById('diaryDate').value;
+        var title = dom.diaryTitle.value.trim();
+        var content = dom.diaryContent.value.trim();
+        var isPinned = dom.isPinned.checked;
+        var dateStr = dom.diaryDate.value;
 
         if (!title || !content) {
             showToast('请填写标题和内容', 'error');
@@ -351,12 +387,12 @@
         var count = entries.length;
 
         // 更新数量显示
-        document.getElementById('entryCount').textContent =
+        dom.entryCount.textContent =
             count > 0 ? '共 ' + count + ' 篇' : '';
 
         // 显示或隐藏空状态
-        var emptyState = document.getElementById('emptyState');
-        var entryList = document.getElementById('entryList');
+        var emptyState = dom.emptyState;
+        var entryList = dom.entryList;
 
         if (entries.length === 0) {
             emptyState.classList.add('show');
@@ -390,8 +426,8 @@
         }) : '';
 
         var pinnedClass = entry.isPinned ? 'pinned' : '';
-        var pinAction = entry.isPinned ? '📌' : '📍';
         var pinTitle = entry.isPinned ? '取消置顶' : '置顶';
+        var pinIcon = entry.isPinned ? 'icon-pinned' : 'icon-pin';
 
         // 图片 HTML
         var imagesHtml = '';
@@ -412,9 +448,15 @@
                     '<div class="entry-date">' + dateStr + ' ' + timeStr + '</div>' +
                 '</div>' +
                 '<div class="entry-actions">' +
-                    '<button class="action-btn pin" data-action="pin" title="' + pinTitle + '">' + pinAction + '</button>' +
-                    '<button class="action-btn edit" data-action="edit" title="编辑">✏️</button>' +
-                    '<button class="action-btn delete" data-action="delete" title="删除">🗑️</button>' +
+                    '<button class="action-btn pin" data-action="pin" title="' + pinTitle + '">' +
+                        '<svg class="action-icon"><use href="#' + pinIcon + '"></use></svg>' +
+                    '</button>' +
+                    '<button class="action-btn edit" data-action="edit" title="编辑">' +
+                        '<svg class="action-icon"><use href="#icon-edit"></use></svg>' +
+                    '</button>' +
+                    '<button class="action-btn delete" data-action="delete" title="删除">' +
+                        '<svg class="action-icon"><use href="#icon-trash"></use></svg>' +
+                    '</button>' +
                 '</div>' +
             '</div>' +
             '<div class="entry-content">' + escapeHtml(entry.content) + '</div>' +
@@ -429,7 +471,7 @@
         if (eventsBound) return;
         eventsBound = true;
 
-        var entryList = document.getElementById('entryList');
+        var entryList = dom.entryList;
 
         entryList.addEventListener('click', async function(e) {
             // 处理图片点击放大
@@ -473,10 +515,15 @@
         overlay.className = 'image-viewer-overlay';
         overlay.innerHTML = '<img src="' + entry.images[imgIndex] + '" alt="查看图片">';
 
-        overlay.addEventListener('click', function() {
-            document.body.removeChild(overlay);
-        });
+        // 使用命名函数以便移除监听器
+        function closeViewer() {
+            overlay.removeEventListener('click', closeViewer);
+            if (overlay.parentNode) {
+                document.body.removeChild(overlay);
+            }
+        }
 
+        overlay.addEventListener('click', closeViewer);
         document.body.appendChild(overlay);
     }
 
@@ -493,10 +540,10 @@
             }
 
             // 填充表单
-            document.getElementById('diaryTitle').value = entry.title;
-            document.getElementById('diaryContent').value = entry.content;
-            document.getElementById('isPinned').checked = entry.isPinned;
-            document.getElementById('diaryDate').value = entry.dateKey || entry.createdAt.split('T')[0];
+            dom.diaryTitle.value = entry.title;
+            dom.diaryContent.value = entry.content;
+            dom.isPinned.checked = entry.isPinned;
+            dom.diaryDate.value = entry.dateKey || entry.createdAt.split('T')[0];
 
             // 加载已有图片
             clearImagePreviews();
@@ -507,10 +554,11 @@
 
             // 设置编辑模式
             editingId = id;
-            document.querySelector('.modal-title').textContent = '✏️ 编辑日记';
+            var titleEl = document.querySelector('.modal-title');
+            titleEl.innerHTML = '<svg class="title-icon"><use href="#icon-edit"></use></svg><span>编辑日记</span>';
 
             // 打开弹窗
-            document.getElementById('writeModal').classList.add('active');
+            dom.writeModal.classList.add('active');
 
             showToast('进入编辑模式');
         } catch (error) {
@@ -558,7 +606,7 @@
     function filterByDate(date) {
         if (!date) {
             renderEntries(allEntries);
-            document.querySelector('.content-title').textContent = '📖 我的日记';
+            dom.contentTitle.innerHTML = '<svg class="title-icon"><use href="#icon-book-open"></use></svg><span>我的日记</span>';
             return;
         }
 
@@ -571,14 +619,14 @@
         // 更新标题
         var dateObj = new Date(date + 'T12:00:00');
         if (isNaN(dateObj.getTime())) {
-            document.querySelector('.content-title').textContent = '📅 已选日期的日记';
+            dom.contentTitle.innerHTML = '<svg class="title-icon"><use href="#icon-calendar"></use></svg><span>已选日期的日记</span>';
             return;
         }
         var dateStr = dateObj.toLocaleDateString('zh-CN', {
             month: 'long',
             day: 'numeric'
         });
-        document.querySelector('.content-title').textContent = '📅 ' + dateStr + ' 的日记';
+        dom.contentTitle.innerHTML = '<svg class="title-icon"><use href="#icon-calendar"></use></svg><span>' + dateStr + ' 的日记</span>';
     }
 
     /**
@@ -592,7 +640,7 @@
             } else {
                 renderEntries(allEntries);
             }
-            document.querySelector('.content-title').textContent = '📖 我的日记';
+            dom.contentTitle.innerHTML = '<svg class="title-icon"><use href="#icon-book-open"></use></svg><span>我的日记</span>';
             return;
         }
 
@@ -605,7 +653,7 @@
         });
 
         renderEntries(filtered);
-        document.querySelector('.content-title').textContent = '🔍 "' + keyword + '" 的搜索结果';
+        dom.contentTitle.innerHTML = '<svg class="title-icon"><use href="#icon-search"></use></svg><span>"' + escapeHtml(keyword) + '" 的搜索结果</span>';
     }
 
     /**
@@ -689,12 +737,16 @@
     }
 
     /**
-     * HTML转义
+     * HTML转义（使用字符替换，比创建 DOM 元素更高效）
      */
     function escapeHtml(text) {
-        var div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+        if (!text) return '';
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
     /**
@@ -702,7 +754,7 @@
      */
     function showToast(message, type) {
         type = type || 'success';
-        var toast = document.getElementById('toast');
+        var toast = dom.toast;
         toast.textContent = message;
         toast.className = 'toast ' + type + ' show';
 
@@ -794,14 +846,14 @@
             document.getElementById('statsStorageSize').textContent = '计算失败';
         }
 
-        document.getElementById('settingsModal').classList.add('active');
+        dom.settingsModal.classList.add('active');
     }
 
     /**
      * 关闭设置弹窗
      */
     function closeSettingsModal() {
-        document.getElementById('settingsModal').classList.remove('active');
+        dom.settingsModal.classList.remove('active');
     }
 
     /**
@@ -823,7 +875,7 @@
      * 清空所有数据
      */
     async function handleClearAll() {
-        if (!confirm('⚠️ 警告：此操作将删除所有日记数据，且无法恢复！\n\n建议先导出备份。\n\n确定要清空所有数据吗？')) {
+        if (!confirm('警告：此操作将删除所有日记数据，且无法恢复！\n\n建议先导出备份。\n\n确定要清空所有数据吗？')) {
             return;
         }
 
@@ -888,7 +940,9 @@
         var reminder = document.createElement('div');
         reminder.className = 'backup-reminder';
         reminder.innerHTML =
-            '<div class="backup-reminder-icon">💾</div>' +
+            '<div class="backup-reminder-icon">' +
+                '<svg class="icon-large"><use href="#icon-save"></use></svg>' +
+            '</div>' +
             '<div class="backup-reminder-title">备份提醒</div>' +
             '<div class="backup-reminder-text">您已经很久没有备份日记数据了。定期备份可以防止数据丢失。</div>' +
             '<div class="backup-reminder-actions">' +
