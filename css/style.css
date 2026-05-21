@@ -1172,6 +1172,23 @@ body {
         width: 20px;
         height: 20px;
     }
+
+    /* 移动端 Markdown 适配 */
+    .entry-content .md-h1 { font-size: 16px; }
+    .entry-content .md-h2 { font-size: 15px; }
+    .entry-content .md-h3,
+    .entry-content .md-h4 { font-size: 14px; }
+    .entry-content .md-code-block {
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+    .entry-content .md-ul,
+    .entry-content .md-ol {
+        padding-left: 16px;
+    }
+    .entry-content .md-p {
+        margin-bottom: 10px;
+    }
 }
 
 /* ==================== 设置面板 ==================== */
