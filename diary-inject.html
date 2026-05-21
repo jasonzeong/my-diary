@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>日记注入工具</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            max-width: 640px;
+            margin: 48px auto;
+            padding: 20px;
+            background: #f5f5f5;
+            line-height: 1.6;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        h1 { font-size: 20px; margin-bottom: 8px; color: #333; }
+        p.desc { color: #666; margin-bottom: 24px; font-size: 14px; }
+
+        .warning {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            color: #5d4037;
+        }
+
+        .steps {
+            counter-reset: step;
+            margin: 0 0 24px 0;
+            padding: 0;
+            list-style: none;
+        }
+        .steps li {
+            position: relative;
+            padding-left: 40px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #444;
+        }
+        .steps li::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 26px;
+            height: 26px;
+            background: #4f6ef7;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .steps strong { color: #222; }
+
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 14px 16px;
+            border-radius: 8px;
+            font-family: "Consolas", "Monaco", "Courier New", monospace;
+            font-size: 13px;
+            margin: 10px 0;
+            overflow-x: auto;
+            user-select: all;
+        }
+        .code-block .comment { color: #6a9955; }
+        .code-block .keyword { color: #569cd6; }
+        .code-block .func { color: #dcdcaa; }
+
+        .btn {
+            background: #4f6ef7;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+            display: inline-block;
+            text-decoration: none;
+        }
+        .btn:hover { background: #3d5ce5; }
+
+        .preview {
+            margin-top: 28px;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .preview h3 { margin-top: 0; font-size: 15px; color: #444; }
+        .preview .entry-title { font-weight: 600; color: #222; margin-bottom: 4px; }
+        .preview .entry-content {
+            color: #555;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .preview .entry-date { color: #888; font-size: 12px; margin-bottom: 8px; }
+
+        .divider {
+            border: none;
+            border-top: 1px solid #e0e0e0;
+            margin: 24px 0;
+        }
+
+        .alt-way {
+            font-size: 13px;
+            color: #666;
+        }
+        .alt-way h3 { font-size: 14px; color: #444; margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📝 日记注入工具</h1>
+        <p class="desc">由于浏览器的同源策略限制，本地文件之间无法共享存储数据。请按以下步骤在 diary-app 页面内完成注入。</p>
+
+        <div class="warning">
+            <strong>为什么需要这样做？</strong><br>
+            浏览器将每个本地 HTML 文件的存储空间完全隔离。<code>diary-inject.html</code> 写入的数据，<code>index.html</code> 无法读取。因此注入操作必须在 diary-app 自身的页面上下文中执行。
+        </div>
+
+        <ol class="steps">
+            <li>
+                <strong>打开 diary-app</strong><br>
+                在浏览器中打开 <a href="index.html" class="btn" style="padding: 6px 14px; font-size: 13px;">index.html</a>
+            </li>
+            <li>
+                <strong>打开开发者控制台</strong><br>
+                按 <kbd>F12</kbd>（或 <kbd>Ctrl+Shift+J</kbd> / <kbd>Cmd+Option+J</kbd>）打开开发者工具，切换到 Console 标签
+            </li>
+            <li>
+                <strong>执行注入命令</strong><br>
+                在控制台粘贴以下命令并按回车：
+                <div class="code-block">injectTodayDiary()</div>
+            </li>
+            <li>
+                <strong>查看结果</strong><br>
+                注入成功后页面会自动刷新日记列表，今天的日记将置顶显示
+            </li>
+        </ol>
+
+        <hr class="divider">
+
+        <div class="preview">
+            <h3>待注入日记预览</h3>
+            <div class="entry-title">2026-05-21 工作日记</div>
+            <div class="entry-date">2026-05-21 · 已置顶</div>
+            <div class="entry-content" id="previewContent"></div>
+        </div>
+
+        <hr class="divider">
+
+        <div class="alt-way">
+            <h3>备选方案：通过导入功能</h3>
+            <p>如果控制台方式不可用，也可以：</p>
+            <ol>
+                <li>在 diary-app 中点击「设置」→「导出」，先导出一份现有数据作为备份</li>
+                <li>将导出的 JSON 中的 <code>entries</code> 数组追加今天的日记数据（格式见上方预览）</li>
+                <li>使用「导入」功能重新导入合并后的数据</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const diaryContent = `今天是充实的一天，主要推进了三个项目的工作。
+
+一、diary-app 性能优化与 UI/UX 升级
+
+上午对日记应用进行了全面的性能优化和视觉升级。修复了初始化顺序问题，解决了之前可能存在的内存泄漏。日历组件的事件监听器从 42 个减少到 1 个，使用事件委托大幅提升了性能。搜索功能添加了 300ms 防抖，避免频繁触发重排。数据库排序增加了时间戳缓存，减少重复创建 Date 对象的开销。
+
+视觉方面，全面替换了 Emoji 为统一的 SVG 图标（共 14 个），应用了温暖极简主义设计系统：奶油色背景、柔和靛蓝主色调、语义化 CSS 令牌、优化后的动画和按钮反馈效果。PWA 主题色和 Service Worker 缓存版本也同步更新到 v2。
+
+这次改动的文件包括 css/style.css、index.html、js/app.js、js/calendar.js、js/db.js、manifest.json 和 service-worker.js，总共修改了约 1180 行代码。
+
+二、wechat-auto-publisher 系统设计
+
+下午花了大量时间设计公众号自动文章生产线的完整架构。这是一个多 Agent 协作系统，覆盖从热点获取到文章发布的全流程。
+
+核心设计包括：
+- 6 个核心 Agent：热点获取、文章撰写（支持 create/revise 双模式）、文章审核、排版设计、排版审核、封面生成与审核
+- 状态机管理：13 种状态，覆盖从 IDLE 到 COMPLETED 的完整流程
+- 循环优化机制：撰写-审核循环、排版-审核循环、封面-审核循环，质量不达标自动修改
+- CLI 接口：支持 --once、--dry-run、--agent-test 等参数
+- LLMClient 抽象层：统一封装不同大模型提供商，预留多模型路由扩展
+
+还编写了详细的状态管理器设计，支持原子写入、损坏恢复和状态转换追踪。整个设计文档超过 1500 行，为后续开发打下了坚实基础。
+
+三、invest-data-web A股数据接入（阶段二完成）
+
+今天完成了投资数据平台的第二阶段开发。安装了 pandas、aiohttp、apscheduler 和 @tanstack/react-table 等依赖。封装了东方财富 API 用于获取 A 股实时数据，虽然沙箱环境网络受限，但代码结构和重试机制都已就绪。
+
+后端完成了 SQLAlchemy 股票模型（15+ 字段）、SQLite 数据库配置、股票 API 路由（列表、股息率排行、行业筛选、搜索、统计）和 APScheduler 定时任务（每 5 分钟自动刷新）。前端使用 TanStack Table 实现了专业的股票数据表格，支持排序、分页和行业筛选。
+
+插入了 10 只测试股票数据（平安银行、万科 A、美的集团等）用于功能演示。
+
+总结：
+
+今天横跨前端性能优化、系统架构设计和全栈数据接入三个不同领域，产出非常丰富。diary-app 的 UI 焕然一新，wechat-auto-publisher 的架构设计清晰完整，invest-data-web 阶段二顺利收官。接下来 invest-data-web 将进入阶段三——港股数据接入。`;
+
+        document.getElementById('previewContent').textContent = diaryContent;
+    </script>
+</body>
+</html>
