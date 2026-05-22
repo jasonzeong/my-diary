@@ -1096,7 +1096,7 @@
     // ==================== 日记注入功能 ====================
     // 供外部工具或控制台调用，将日记写入当前应用的存储中
     window.injectTodayDiary = async function() {
-        var todayKey = '2026-05-21';
+        var todayKey = '2026-05-22';
 
         // 检查今天是否已有工作日记
         var entries = await window.db.getAll();
@@ -1109,14 +1109,14 @@
             return { success: false, reason: 'already_exists' };
         }
 
-        var diaryContent = '今天是充实的一天，主要推进了三个项目的工作。\n\n一、diary-app 性能优化与 UI/UX 升级\n\n上午对日记应用进行了全面的性能优化和视觉升级。修复了初始化顺序问题，解决了之前可能存在的内存泄漏。日历组件的事件监听器从 42 个减少到 1 个，使用事件委托大幅提升了性能。搜索功能添加了 300ms 防抖，避免频繁触发重排。数据库排序增加了时间戳缓存，减少重复创建 Date 对象的开销。\n\n视觉方面，全面替换了 Emoji 为统一的 SVG 图标（共 14 个），应用了温暖极简主义设计系统：奶油色背景、柔和靛蓝主色调、语义化 CSS 令牌、优化后的动画和按钮反馈效果。PWA 主题色和 Service Worker 缓存版本也同步更新到 v2。\n\n这次改动的文件包括 css/style.css、index.html、js/app.js、js/calendar.js、js/db.js、manifest.json 和 service-worker.js，总共修改了约 1180 行代码。\n\n二、wechat-auto-publisher 系统设计\n\n下午花了大量时间设计公众号自动文章生产线的完整架构。这是一个多 Agent 协作系统，覆盖从热点获取到文章发布的全流程。\n\n核心设计包括：\n- 6 个核心 Agent：热点获取、文章撰写（支持 create/revise 双模式）、文章审核、排版设计、排版审核、封面生成与审核\n- 状态机管理：13 种状态，覆盖从 IDLE 到 COMPLETED 的完整流程\n- 循环优化机制：撰写-审核循环、排版-审核循环、封面-审核循环，质量不达标自动修改\n- CLI 接口：支持 --once、--dry-run、--agent-test 等参数\n- LLMClient 抽象层：统一封装不同大模型提供商，预留多模型路由扩展\n\n还编写了详细的状态管理器设计，支持原子写入、损坏恢复和状态转换追踪。整个设计文档超过 1500 行，为后续开发打下了坚实基础。\n\n三、invest-data-web A股数据接入（阶段二完成）\n\n今天完成了投资数据平台的第二阶段开发。安装了 pandas、aiohttp、apscheduler 和 @tanstack/react-table 等依赖。封装了东方财富 API 用于获取 A 股实时数据，虽然沙箱环境网络受限，但代码结构和重试机制都已就绪。\n\n后端完成了 SQLAlchemy 股票模型（15+ 字段）、SQLite 数据库配置、股票 API 路由（列表、股息率排行、行业筛选、搜索、统计）和 APScheduler 定时任务（每 5 分钟自动刷新）。前端使用 TanStack Table 实现了专业的股票数据表格，支持排序、分页和行业筛选。\n\n插入了 10 只测试股票数据（平安银行、万科 A、美的集团等）用于功能演示。\n\n总结：\n\n今天横跨前端性能优化、系统架构设计和全栈数据接入三个不同领域，产出非常丰富。diary-app 的 UI 焕然一新，wechat-auto-publisher 的架构设计清晰完整，invest-data-web 阶段二顺利收官。接下来 invest-data-web 将进入阶段三——港股数据接入。';
+        var diaryContent = '今天是充实的一天，主要围绕 diary-app 的完善和工具链优化展开。\n\n一、diary-app 日记注入与 Markdown 支持\n\n上午完善了日记注入工具。将原本需要手动打开控制台执行 injectTodayDiary() 的方式，改为页面加载后自动检测并注入，大大简化了使用流程。同步更新了 diary-inject.html 的引导说明，从四步手动操作缩减为「打开页面即可自动注入」。\n\n下午为日记应用添加了轻量级 Markdown 渲染器。新增 renderMarkdown() 和 renderInline() 函数，支持标题、无序/有序列表、加粗、代码块、分隔线等常用语法。修改了 renderEntry() 函数，日记内容不再以纯文本转义输出，而是按 Markdown 结构排版渲染。\n\n晚上针对手机端反馈进行了响应式优化。在 @media (max-width: 768px) 中追加了 Markdown 元素的移动端适配：标题字号逐级缩小、代码块内边距和字体压缩、列表缩进从 20px 减至 16px，确保小屏幕上的阅读体验。\n\n改动的文件包括 js/app.js（新增约 90 行 Markdown 渲染逻辑）和 css/style.css（新增约 30 行 Markdown 及移动端样式）。\n\n二、wechat-auto-publisher 公众号自动文章生产线\n\n今天继续推进多 Agent 协作系统的开发，重点查看了 hot_fetcher.py 热点获取模块的实现。该系统覆盖从热点获取、文章撰写、审核、排版到封面生成的完整流程，采用状态机驱动，支持 create 和 revise 双模式。后续将逐步完善其余 Agent 模块的对接。\n\n三、Git 工作流与网络排查\n\n多次尝试将 diary-app 的修改推送到 GitHub，均因 HTTPS 443 端口连接被重置而失败。排查发现 ping github.com 可以通，但 curl 和 git push 无法建立 HTTPS 连接，判断为本地网络对 HTTPS 流量的限制。\n\n作为替代方案，学习了在 VS Code 中使用图形界面进行 Git 推送的操作流程（源代码管理面板 → 暂存 → 提交 → 点击分支名称推送）。虽然最终推送仍未成功，但掌握了 VS Code 内置 Git 工具的使用方法。\n\n总结：\n\n今天的工作集中在 diary-app 的功能迭代和体验优化上，从自动注入到 Markdown 渲染再到移动端适配，形成了一条完整的改进链路。wechat-auto-publisher 也在稳步推进中。Git 推送的网络问题待后续切换网络或配置代理后解决。';
 
         var entry = {
-            title: '2026-05-21 工作日记',
+            title: '2026-05-22 工作日记',
             content: diaryContent,
             isPinned: true,
             dateKey: todayKey,
-            createdAt: '2026-05-21T21:00:00.000Z'
+            createdAt: '2026-05-22T21:00:00.000Z'
         };
 
         try {
